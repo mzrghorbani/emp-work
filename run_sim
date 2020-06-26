@@ -13,4 +13,8 @@ vcom -work work -refresh -force_refresh
 
 ./vsim -c work.top -Gsourcefile=../../../txt_files/htMiniStubs64b/ev0_n1/ev0_n1_proc0.txt  -Gsinkfile=output.txt -do 'run 1us' -do 'quit'
 
+echo "Run"
+echo "./vsim -i work.top -Gsourcefile=input.txt -Gsinkfile=output.txt"
+echo "for modelsim interactive mode"
+
 exit
