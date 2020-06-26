@@ -1,0 +1,16 @@
+#!/bin/bash
+
+dirname="workspace"
+
+cd $PWD/$dirname/proj/lrhls_sim
+
+if [ -f output.txt ]
+then 
+    rm output.txt
+fi
+
+vcom -work work -refresh -force_refresh
+
+./vsim -c work.top -Gsourcefile=../../../txt_files/htMiniStubs64b/ev0_n1/ev0_n1_proc0.txt  -Gsinkfile=output.txt -do 'run 1us' -do 'quit'
+
+exit

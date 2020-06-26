@@ -1,0 +1,46 @@
+#!/bin/bash
+
+dirname="workspace"
+
+if [ -d $PWD/$dirname/src/lrhls-repo/lrhls/firmware/cfg/top_sim.dep ]
+then
+  rm $PWD/$dirname/src/lrhls-repo/lrhls/firmware/cfg/top_sim.dep
+fi
+
+cd $PWD/$dirname
+
+echo "Creating dependencies for simulations."
+
+echo 'include -c emp-fwk:boards/serenity/dc_ku15p device.dep' >> src/lrhls-repo/lrhls/firmware/cfg/top_sim.dep
+echo 'include -c emp-fwk:boards/testbench' >> src/lrhls-repo/lrhls/firmware/cfg/top_sim.dep
+echo 'src emp_payload.vhd' >> src/lrhls-repo/lrhls/firmware/cfg/top_sim.dep
+echo 'src --cd ../cgn/LRHLS_IP LRHLS_IP.xci' >> src/lrhls-repo/lrhls/firmware/cfg/top_sim.dep
+echo 'include -c emp-fwk:projects/examples/testbench tb_top.dep' >> src/lrhls-repo/lrhls/firmware/cfg/top_sim.dep
+echo 'include -c emp-fwk:boards/testbench packages.dep' >> src/lrhls-repo/lrhls/firmware/cfg/top_sim.dep
+
+if [ ! -d proj/lrhls_sim ]
+then
+    ipbb proj create sim lrhls_sim lrhls-repo:lrhls -t top_sim.dep
+else
+    rm -rf proj/lrhls_sim
+    ipbb proj create sim lrhls_sim lrhls-repo:lrhls -t top_sim.dep
+fi
+
+cd proj/lrhls_sim/
+
+echo "Create Modelsim project for simulations."
+
+ipbb sim setup-simlib 
+ipbb sim ipcores
+ipbb sim make-project
+
+echo "To suppress warnings, edit $dirname/proj/lrhls_sim/modelsim.ini , adding:"
+echo "[vsim]"
+echo "NumericStdNoWarnings = 1"
+echo "StdArithNoWarnings = 1"
+echo "[msg_system]"
+echo "Suppress = 8780,8683,8684"
+
+echo "Modelsim project created successfully."
+
+exit

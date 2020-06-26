@@ -1,0 +1,66 @@
+#!/bin/bash
+
+echo "                   "
+echo "Is kinit initiated?"
+echo "    If NOT!"
+echo "    'kinit <username>@CERN.CH'"
+echo "                              "
+
+dirname="workspace"
+
+echo "Is ipbb environment set?" 
+echo "    If NOT!"
+echo "    'curl -L https://github.com/ipbus/ipbb/archive/v0.5.2.tar.gz | tar xvz'"
+echo "    'source ipbb-0.5.2/env.sh'"
+echo "                              "
+
+echo "Creating a new $dirname for emp-work." 
+
+if [ ! -d $dirname ]
+then
+        mkdir -p $dirname
+else
+        rm -rf $dirname
+        ipbb init $dirname
+fi
+
+cd $PWD/$dirname
+
+echo "Downloading repositories from GitLab."
+
+ipbb add git https://:@gitlab.cern.ch:8443/p2-xware/firmware/emp-fwk.git -b v0.3.4
+ipbb add git https://gitlab.cern.ch/ttc/legacy_ttc.git -b v2.1
+ipbb add git https://github.com/ipbus/ipbus-firmware -b v1.7
+
+echo "Creating new directories and dependency file."
+
+mkdir -p src/lrhls-repo/lrhls/firmware/{cfg,cgn,hdl}
+
+ln -s ../../../../../../../lr_make_hls_ip/hdl/LR_useHLS_IP/LR_useHLS_IP.srcs/sources_1/ip/LRHLS_IP src/lrhls-repo/lrhls/firmware/cgn/LRHLS_IP
+
+#cp src/emp-fwk/components/payload/firmware/hdl/emp_payload.vhd src/lrhls-repo/lrhls/firmware/hdl/.
+cp ../emp_payload/emp_payload_v8.vhd src/lrhls-repo/lrhls/firmware/hdl/emp_payload.vhd
+cp src/emp-fwk/projects/examples/serenity/dc_ku15p/firmware/hdl/dc_ku15p_decl.vhd src/lrhls-repo/lrhls/firmware/hdl/.
+
+echo 'src emp_payload.vhd' >> src/lrhls-repo/lrhls/firmware/cfg/top.dep
+echo 'addrtab -c emp-fwk:components/payload emp_payload.xml' >> src/lrhls-repo/lrhls/firmware/cfg/top.dep
+echo 'src -c emp-fwk:components/payload ../ucf/emp_simple_payload.tcl' >> src/lrhls-repo/lrhls/firmware/cfg/top.dep
+echo 'include -c emp-fwk:boards/serenity/dc_ku15p dc_ku15p_sm1_v2.dep' >> src/lrhls-repo/lrhls/firmware/cfg/top.dep
+echo 'src dc_ku15p_decl.vhd' >> src/lrhls-repo/lrhls/firmware/cfg/top.dep
+
+echo "Creating a Vivado project using EMP-FWK settings."
+
+ipbb proj create vivado lrhls lrhls-repo:lrhls -t top.dep
+
+cd proj/lrhls/
+
+ipbb vivado project
+
+echo "Vivado Synthesis and Implementation is disabled, optionally!"
+
+#ipbb vivado synth -j4 impl -j4
+#ipbb vivado package
+
+echo "Vivado project created successfully."
+
+exit
